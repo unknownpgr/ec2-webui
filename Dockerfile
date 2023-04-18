@@ -4,6 +4,6 @@ RUN pip install boto3
 
 WORKDIR /app
 
-COPY . .
+COPY main.py .
 
 CMD ["python", "main.py"]
