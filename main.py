@@ -67,31 +67,35 @@ def main():
 
     previous_time_setting = None
 
-    while True:
-        [
-            up_hour,
-            up_minute,
-            down_hour,
-            down_minute,
-        ] = get_time_setting()
+    try:
+        while True:
+            [
+                up_hour,
+                up_minute,
+                down_hour,
+                down_minute,
+            ] = get_time_setting()
 
-        current_time_setting = f"{up_hour}:{up_minute} - {down_hour}:{down_minute}"
-        if previous_time_setting != current_time_setting:
-            print(f"Time setting set: {current_time_setting}")
-            previous_time_setting = current_time_setting
+            current_time_setting = f"{up_hour}:{up_minute} - {down_hour}:{down_minute}"
+            if previous_time_setting != current_time_setting:
+                print(f"Time setting set: {current_time_setting}")
+                previous_time_setting = current_time_setting
 
-        now = get_time_kr()
+            now = get_time_kr()
 
-        if now.hour == up_hour and now.minute == up_minute:
-            print(f"{now} - Turn on EC2")
-            turn_on_ec2()
-        elif now.hour == down_hour and now.minute == down_minute:
-            print(f"{now} - Turn off EC2")
-            for i in range(5):
-                print(f"{now} - Count {i}")
-                time.sleep(1)
-            turn_off_ec2()
-        time.sleep(25)
+            if now.hour == up_hour and now.minute == up_minute:
+                print(f"{now} - Turn on EC2")
+                turn_on_ec2()
+            elif now.hour == down_hour and now.minute == down_minute:
+                print(f"{now} - Turn off EC2")
+                for i in range(5):
+                    print(f"{now} - Count {i}")
+                    time.sleep(1)
+                turn_off_ec2()
+            time.sleep(25)
+
+    except KeyboardInterrupt:
+        print("Stop EC2 scheduler")
 
 
 if __name__ == "__main__":
