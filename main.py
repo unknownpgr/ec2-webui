@@ -47,21 +47,81 @@ def turn_off_ec2():
     ec2.instances.filter(InstanceIds=config.EC2_INSTANCE_IDS).stop()
 
 
-print("Start EC2 scheduler")
+def get_time_setting():
+    """
+    Get time setting
 
-while True:
-    # Turn on EC2 at 16:55
-    # Turn off EC2 at 00:10
+    Time setting is stored in `setting` file.
+    Format:
+    ```
+    STARTUP_TIME=16:55
+    SHUTDOWN_TIME=00:10
+    ```
 
-    now = get_time_kr()
-    print(f"{now} - {now.hour}:{now.minute}")
-    if now.hour == 15 and now.minute == 55:
-        print(f"{now} - Turn on EC2")
-        turn_on_ec2()
-    elif now.hour == 0 and now.minute == 0:
-        print(f"{now} - Turn off EC2")
-        for i in range(5):
-            print(f"{now} - Count {i}")
-            time.sleep(1)
-        turn_off_ec2()
-    time.sleep(25)
+    Return: [
+        startup_time_hour,
+        startup_time_minute,
+        shutdown_time_hour,
+        shutdown_time_minute,
+    ]
+    """
+    with open("setting", "r", encoding="utf-8") as f:
+        lines = f.readlines()
+        for line in lines:
+            if line.startswith("STARTUP_TIME"):
+                startup_time = line.split("=")[1].strip()
+            elif line.startswith("SHUTDOWN_TIME"):
+                shutdown_time = line.split("=")[1].strip()
+
+    startup_time_parts = startup_time.split(":")
+    shutdown_time_parts = shutdown_time.split(":")
+
+    startup_time_hour = int(startup_time_parts[0])
+    startup_time_minute = int(startup_time_parts[1])
+    shutdown_time_hour = int(shutdown_time_parts[0])
+    shutdown_time_minute = int(shutdown_time_parts[1])
+
+    return [
+        startup_time_hour,
+        startup_time_minute,
+        shutdown_time_hour,
+        shutdown_time_minute,
+    ]
+
+
+def main():
+    """
+    Main function
+    """
+
+    previous_time_setting = None
+
+    while True:
+        [
+            up_hour,
+            up_minute,
+            down_hour,
+            down_minute,
+        ] = get_time_setting()
+
+        current_time_setting = f"{up_hour}:{up_minute} - {down_hour}:{down_minute}"
+        if previous_time_setting != current_time_setting:
+            print(f"Time setting set: {current_time_setting}")
+            previous_time_setting = current_time_setting
+
+        now = get_time_kr()
+
+        if now.hour == up_hour and now.minute == up_minute:
+            print(f"{now} - Turn on EC2")
+            turn_on_ec2()
+        elif now.hour == down_hour and now.minute == down_minute:
+            print(f"{now} - Turn off EC2")
+            for i in range(5):
+                print(f"{now} - Count {i}")
+                time.sleep(1)
+            turn_off_ec2()
+        time.sleep(25)
+
+
+if __name__ == "__main__":
+    main()
