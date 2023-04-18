@@ -94,6 +94,9 @@ def main():
     Main function
     """
 
+    print("Start EC2 scheduler")
+    print("Affected EC2 instance:", config.EC2_INSTANCE_IDS)
+
     previous_time_setting = None
 
     while True:
