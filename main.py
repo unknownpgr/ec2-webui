@@ -49,44 +49,12 @@ def turn_off_ec2():
 
 def get_time_setting():
     """
-    Get time setting
-
-    Time setting is stored in `setting` file.
-    Format:
-    ```
-    STARTUP_TIME=16:55
-    SHUTDOWN_TIME=00:10
-    ```
-
-    Return: [
-        startup_time_hour,
-        startup_time_minute,
-        shutdown_time_hour,
-        shutdown_time_minute,
-    ]
+    Get time setting from config
     """
-    with open("setting", "r", encoding="utf-8") as f:
-        lines = f.readlines()
-        for line in lines:
-            if line.startswith("STARTUP_TIME"):
-                startup_time = line.split("=")[1].strip()
-            elif line.startswith("SHUTDOWN_TIME"):
-                shutdown_time = line.split("=")[1].strip()
+    up_hour, up_minute = config.TIME_SETTING["STARTUP_TIME"].split(":")
+    down_hour, down_minute = config.TIME_SETTING["SHUTDOWN_TIME"].split(":")
 
-    startup_time_parts = startup_time.split(":")
-    shutdown_time_parts = shutdown_time.split(":")
-
-    startup_time_hour = int(startup_time_parts[0])
-    startup_time_minute = int(startup_time_parts[1])
-    shutdown_time_hour = int(shutdown_time_parts[0])
-    shutdown_time_minute = int(shutdown_time_parts[1])
-
-    return [
-        startup_time_hour,
-        startup_time_minute,
-        shutdown_time_hour,
-        shutdown_time_minute,
-    ]
+    return [int(up_hour), int(up_minute), int(down_hour), int(down_minute)]
 
 
 def main():
