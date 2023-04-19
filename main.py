@@ -15,11 +15,11 @@ def get_time_kr():
     return datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
 
 
-def get_ec2_client(access_key, secret_key, region):
+def get_ec2(access_key, secret_key, region):
     """
     Get EC2 client
     """
-    return boto3.client(
+    return boto3.resource(
         "ec2",
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_key,
@@ -31,7 +31,7 @@ def turn_on_ec2():
     """
     Turn on EC2 instance
     """
-    ec2 = get_ec2_client(
+    ec2 = get_ec2(
         config.AWS_ACCESS_KEY_ID, config.AWS_SECRET_ACCESS_KEY, config.AWS_REGION
     )
     ec2.instances.filter(InstanceIds=config.EC2_INSTANCE_IDS).start()
@@ -41,7 +41,7 @@ def turn_off_ec2():
     """
     Turn off EC2 instance
     """
-    ec2 = get_ec2_client(
+    ec2 = get_ec2(
         config.AWS_ACCESS_KEY_ID, config.AWS_SECRET_ACCESS_KEY, config.AWS_REGION
     )
     ec2.instances.filter(InstanceIds=config.EC2_INSTANCE_IDS).stop()
