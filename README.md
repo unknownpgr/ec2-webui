@@ -1,4 +1,4 @@
-# EC2 Scheduler
+# EC2 Controller WebUI
 
 ![](./imgs/screenshot.png)
 
