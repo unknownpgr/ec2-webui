@@ -5,6 +5,9 @@
   "repository": "https://github.com/unknownpgr/ec2-scheduler.git",
   "author": "unknownpgr <unknownpgr@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.316.0",
     "dotenv": "^16.0.3",
