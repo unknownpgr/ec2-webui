@@ -122,9 +122,41 @@ async function saveConfig() {
   await fs.writeFile("config.json", json);
 }
 
+function parseTime(time: string) {
+  const [hours, minutes] = time.split(":");
+  return {
+    hours: parseInt(hours),
+    minutes: parseInt(minutes),
+  };
+}
+
+function scheduler() {
+  const now = new Date();
+  config.ec2Schedules.forEach((schedule) => {
+    const startupTime = parseTime(schedule.startupTime);
+    const shutdownTime = parseTime(schedule.shutdownTime);
+    if (
+      now.getUTCHours() === startupTime.hours &&
+      now.getUTCMinutes() === startupTime.minutes
+    ) {
+      console.log("start ec2" + schedule.instanceId);
+      startEc2(schedule.instanceId);
+    }
+    if (
+      now.getUTCHours() === shutdownTime.hours &&
+      now.getUTCMinutes() === shutdownTime.minutes
+    ) {
+      console.log("stop ec2" + schedule.instanceId);
+      stopEc2(schedule.instanceId);
+    }
+  });
+}
+
 async function main() {
   await updateEc2State();
   await loadConfig();
+
+  setInterval(scheduler, 1000 * 25);
 
   const app = express();
 

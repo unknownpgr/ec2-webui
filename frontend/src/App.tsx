@@ -45,17 +45,37 @@ async function post(path: string, session: string, body: any) {
   return data;
 }
 
+function toUTC(timeString: string) {
+  /**
+   * This function will convert a time string in the format of "HH:MM" in the local timezone to the equivalent time in the UTC timezone.
+   * And it will return converted date in same format.
+   */
+  const date = new Date();
+  const [hours, minutes] = timeString.split(":");
+  date.setHours(+hours, +minutes, 0, 0);
+  return `${date.getUTCHours()}:${date.getUTCMinutes()}`;
+}
+
+function fromUTC(timeString: string) {
+  /**
+   * This function will convert a time string in the format of "HH:MM" in the UTC timezone to the equivalent time in the local timezone.
+   * And it will return converted date in same format.
+   */
+  const date = new Date();
+  const [hours, minutes] = timeString.split(":");
+  date.setUTCHours(+hours, +minutes, 0, 0);
+  return `${date.getHours()}:${date.getMinutes()}`;
+}
+
 function App() {
   const [password, setPassword] = useState("");
   const [session, setSession] = useState("");
   const [state, setState] = useState<State>({ ec2State: [], ec2Schedules: [] });
-  const [schedule, setSchedule] = useState<Ec2Schedule>({
-    instanceId: "",
-    startupTime: "",
-    shutdownTime: "",
-  });
   const [lastUpdate, setLastUpdate] = useState(0);
   const isLoggedIn = session !== "";
+  const [instanceId, setInstanceId] = useState("");
+  const [startupTime, setStartupTime] = useState("");
+  const [shutdownTime, setShutdownTime] = useState("");
 
   const updateEc2 = useCallback(async () => {
     const res = (await get("/api/state", session)) as State;
@@ -80,6 +100,11 @@ function App() {
   }
 
   async function onAddSchedule() {
+    const schedule = {
+      instanceId,
+      startupTime: toUTC(startupTime),
+      shutdownTime: toUTC(shutdownTime),
+    };
     const res = await post("/api/schedule/add", session, schedule);
     if (res.success) {
       updateEc2();
@@ -135,15 +160,8 @@ function App() {
           <h2>{e.instanceName}</h2>
           <p>
             {e.instanceId}
-            <button
-              onClick={() =>
-                setSchedule((schedule) => ({
-                  ...schedule,
-                  instanceId: e.instanceId,
-                }))
-              }
-            >
-              Set Schedule
+            <button onClick={() => setInstanceId(e.instanceId)}>
+              edit schedule
             </button>
           </p>
           <p>{e.instanceType}</p>
@@ -174,8 +192,20 @@ function App() {
       {state.ec2Schedules.map((e) => (
         <div key={e.instanceId}>
           <p>{e.instanceId}</p>
-          <p>{e.startupTime}</p>
-          <p>{e.shutdownTime}</p>
+          {state.ec2State.find((e) => e.instanceId === instanceId) ? (
+            <p>
+              {
+                state.ec2State.find((e) => e.instanceId === instanceId)
+                  ?.instanceName
+              }
+            </p>
+          ) : null}
+          <p>
+            {fromUTC(e.startupTime)}({e.startupTime} UTC)
+          </p>
+          <p>
+            {fromUTC(e.shutdownTime)}({e.shutdownTime} UTC)
+          </p>
           <button onClick={async () => await onRemoveSchedule(e.instanceId)}>
             Remove
           </button>
@@ -186,40 +216,35 @@ function App() {
         <label>InstanceId</label>
         <input
           type="text"
-          onChange={(e) =>
-            setSchedule((schedule) => ({
-              ...schedule,
-              instanceId: e.target.value,
-            }))
-          }
-          value={schedule.instanceId}
+          onChange={(e) => setInstanceId(e.target.value)}
+          value={instanceId}
         />
+        {state.ec2State.find((e) => e.instanceId === instanceId) ? (
+          <p>
+            {
+              state.ec2State.find((e) => e.instanceId === instanceId)
+                ?.instanceName
+            }
+          </p>
+        ) : null}
       </div>
       <div>
         <label>StartupTime</label>
         <input
           type="text"
-          onChange={(e) =>
-            setSchedule((schedule) => ({
-              ...schedule,
-              startupTime: e.target.value,
-            }))
-          }
-          value={schedule.startupTime}
+          onChange={(e) => setStartupTime(e.target.value)}
+          value={startupTime}
         />
+        <p>{toUTC(startupTime)}UTC</p>
       </div>
       <div>
         <label>ShutdownTime</label>
         <input
           type="text"
-          onChange={(e) =>
-            setSchedule((schedule) => ({
-              ...schedule,
-              shutdownTime: e.target.value,
-            }))
-          }
-          value={schedule.shutdownTime}
+          onChange={(e) => setShutdownTime(e.target.value)}
+          value={shutdownTime}
         />
+        <p>{toUTC(shutdownTime)}UTC</p>
       </div>
       <button onClick={async () => await onAddSchedule()}>Add</button>
     </div>
