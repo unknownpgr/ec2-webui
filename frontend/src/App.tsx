@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 interface Ec2State {
   instanceType: string;
@@ -9,6 +9,17 @@ interface Ec2State {
     code: number;
     name: string;
   };
+}
+
+interface Ec2Schedule {
+  instanceId: string;
+  startupTime: string;
+  shutdownTime: string;
+}
+
+interface State {
+  ec2State: Ec2State[];
+  ec2Schedules: Ec2Schedule[];
 }
 
 async function get(path: string, session: string) {
@@ -37,9 +48,20 @@ async function post(path: string, session: string, body: any) {
 function App() {
   const [password, setPassword] = useState("");
   const [session, setSession] = useState("");
-  const [ec2, setEc2] = useState<Ec2State[]>([]);
+  const [state, setState] = useState<State>({ ec2State: [], ec2Schedules: [] });
+  const [schedule, setSchedule] = useState<Ec2Schedule>({
+    instanceId: "",
+    startupTime: "",
+    shutdownTime: "",
+  });
   const [lastUpdate, setLastUpdate] = useState(0);
   const isLoggedIn = session !== "";
+
+  const updateEc2 = useCallback(async () => {
+    const res = (await get("/api/state", session)) as State;
+    setState(res);
+    setLastUpdate(Date.now());
+  }, [session]);
 
   async function onLogin() {
     const res = await post("/api/login", "", { password });
@@ -57,10 +79,18 @@ function App() {
     }
   }
 
-  async function updateEc2() {
-    const res = (await get("/api/ec2", session)) as Ec2State[];
-    setEc2(res);
-    setLastUpdate(Date.now());
+  async function onAddSchedule() {
+    const res = await post("/api/schedule/add", session, schedule);
+    if (res.success) {
+      updateEc2();
+    }
+  }
+
+  async function onRemoveSchedule(instanceId: string) {
+    const res = await post("/api/schedule/remove", session, { instanceId });
+    if (res.success) {
+      updateEc2();
+    }
   }
 
   useEffect(() => {
@@ -79,7 +109,7 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn) return;
     updateEc2();
-  }, [isLoggedIn, session]);
+  }, [isLoggedIn, updateEc2]);
 
   return (
     <div>
@@ -99,9 +129,23 @@ function App() {
       )}
       <button onClick={updateEc2}>Update</button>
       <p>Last update: {new Date(lastUpdate).toLocaleString()}</p>
-      {ec2.map((e) => (
+      <h2>EC2</h2>
+      {state.ec2State.map((e) => (
         <div key={e.instanceId}>
           <h2>{e.instanceName}</h2>
+          <p>
+            {e.instanceId}
+            <button
+              onClick={() =>
+                setSchedule((schedule) => ({
+                  ...schedule,
+                  instanceId: e.instanceId,
+                }))
+              }
+            >
+              Set Schedule
+            </button>
+          </p>
           <p>{e.instanceType}</p>
           <p>{e.publicIpAddress}</p>
           <p>{e.state.name}</p>
@@ -126,6 +170,58 @@ function App() {
           </button>
         </div>
       ))}
+      <h2>Schedule</h2>
+      {state.ec2Schedules.map((e) => (
+        <div key={e.instanceId}>
+          <p>{e.instanceId}</p>
+          <p>{e.startupTime}</p>
+          <p>{e.shutdownTime}</p>
+          <button onClick={async () => await onRemoveSchedule(e.instanceId)}>
+            Remove
+          </button>
+        </div>
+      ))}
+      <h2>Add Schedule</h2>
+      <div>
+        <label>InstanceId</label>
+        <input
+          type="text"
+          onChange={(e) =>
+            setSchedule((schedule) => ({
+              ...schedule,
+              instanceId: e.target.value,
+            }))
+          }
+          value={schedule.instanceId}
+        />
+      </div>
+      <div>
+        <label>StartupTime</label>
+        <input
+          type="text"
+          onChange={(e) =>
+            setSchedule((schedule) => ({
+              ...schedule,
+              startupTime: e.target.value,
+            }))
+          }
+          value={schedule.startupTime}
+        />
+      </div>
+      <div>
+        <label>ShutdownTime</label>
+        <input
+          type="text"
+          onChange={(e) =>
+            setSchedule((schedule) => ({
+              ...schedule,
+              shutdownTime: e.target.value,
+            }))
+          }
+          value={schedule.shutdownTime}
+        />
+      </div>
+      <button onClick={async () => await onAddSchedule()}>Add</button>
     </div>
   );
 }

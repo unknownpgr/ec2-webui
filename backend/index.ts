@@ -175,9 +175,13 @@ async function main() {
     });
   });
 
-  app.get("/api/ec2", async (req, res) => {
+  app.get("/api/state", async (req, res) => {
     await updateEc2State();
-    res.json(ec2State);
+    res.json({
+      success: true,
+      ec2State,
+      ec2Schedules: config.ec2Schedules,
+    });
   });
 
   app.post("/api/ec2/start", async (req, res) => {
@@ -191,6 +195,45 @@ async function main() {
   app.post("/api/ec2/stop", async (req, res) => {
     const instanceId = req.body.instanceId;
     await stopEc2(instanceId);
+    res.json({
+      success: true,
+    });
+  });
+
+  app.post("/api/schedule/add", async (req, res) => {
+    const instanceId = req.body.instanceId;
+
+    // Check if schedule already exists
+    const index = config.ec2Schedules.findIndex(
+      (schedule) => schedule.instanceId === instanceId
+    );
+    if (index >= 0) {
+      // Remove existing schedule
+      config.ec2Schedules.splice(index, 1);
+    }
+
+    const startupTime = req.body.startupTime;
+    const shutdownTime = req.body.shutdownTime;
+    config.ec2Schedules.push({
+      instanceId,
+      startupTime,
+      shutdownTime,
+    });
+    await saveConfig();
+    res.json({
+      success: true,
+    });
+  });
+
+  app.post("/api/schedule/remove", async (req, res) => {
+    const instanceId = req.body.instanceId;
+    const index = config.ec2Schedules.findIndex(
+      (schedule) => schedule.instanceId === instanceId
+    );
+    if (index >= 0) {
+      config.ec2Schedules.splice(index, 1);
+      await saveConfig();
+    }
     res.json({
       success: true,
     });
