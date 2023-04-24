@@ -92,7 +92,7 @@ function App() {
   }
 
   async function onLogout() {
-    const res = await post("/api/logout", session, {});
+    const res = await get("/api/logout", session);
     if (res.success) {
       localStorage.removeItem("session");
       setSession("");
