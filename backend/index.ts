@@ -9,12 +9,6 @@ import {
 import fs from "fs/promises";
 import crypto from "crypto";
 
-declare module "express-session" {
-  interface SessionData {
-    isLoggedIn: boolean;
-  }
-}
-
 dotenv.config();
 
 const WEBUI_PASSWORD = process.env.WEBUI_PASSWORD || "WEBUI_PASSWORD";
