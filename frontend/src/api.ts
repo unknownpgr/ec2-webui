@@ -69,7 +69,7 @@ export async function addSchedule(schedule: Ec2Schedule): Promise<boolean> {
 export async function removeSchedule(instanceId: string) {
   const session = localStorage.getItem("session");
   if (!session) return false;
-  const res = await post("/api/schedule/delete", session, { instanceId });
+  const res = await post("/api/schedule/remove", session, { instanceId });
   return res.success;
 }
 
